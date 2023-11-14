@@ -40,6 +40,15 @@ end
 def ford_films
   # List the films in which 'Harrison Ford' has appeared.
   execute(<<-SQL)
+  SELECT  movies.title
+  FROM movies
+  JOIN castings ON movies.id = castings.movie_id
+  WHERE castings.actor_id = (
+    -- Harrison Ford's actor ID
+      SELECT id
+      FROM actors
+      WHERE name = 'Harrison Ford'
+  )
   SQL
 end
 
@@ -48,12 +57,26 @@ def ford_supporting_films
   # role. [Note: The ord field of casting gives the position of the actor. If
   # ord=1 then this actor is in the starring role.]
   execute(<<-SQL)
+  SELECT  movies.title
+  FROM movies
+  JOIN castings ON movies.id = castings.movie_id
+  WHERE castings.actor_id = (
+    -- Harrison Ford's actor ID
+      SELECT id
+      FROM actors
+      WHERE name = 'Harrison Ford'
+  ) AND castings.ord != 1
   SQL
 end
 
 def films_and_stars_from_sixty_two
   # List the title and leading star of every 1962 film.
   execute(<<-SQL)
+  SELECT movies.title, actors.name
+  FROM movies
+  JOIN castings ON movies.id = castings.movie_id 
+  JOIN actors ON castings.actor_id = actors.id
+  WHERE movies.yr = 1962 AND castings.ord = 1
   SQL
 end
 
@@ -61,6 +84,19 @@ def travoltas_busiest_years
   # Which were the busiest years for 'John Travolta'? Show the year and the
   # number of movies he made for any year in which he made at least 2 movies.
   execute(<<-SQL)
+  SELECT yr, count(*)
+  FROM movies
+  JOIN castings ON movies.id IN (
+  -- id's of movies with John Travolta in it  
+    SELECT movie_id
+    FROM castings
+    WHERE actor_id = (
+      -- John Travolta's actor_id
+      SELECT id FROM actors WHERE name = 'John Travolta'
+    )
+  )
+  GROUP BY yr
+  HAVING COUNT(title) > 2
   SQL
 end
 
